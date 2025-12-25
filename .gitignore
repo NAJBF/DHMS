@@ -8,5 +8,15 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Environment variables
 .env
-docs
+.env.local
+.env.production
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# Static files
+staticfiles/
