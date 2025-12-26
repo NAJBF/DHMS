@@ -10,11 +10,7 @@ from students.models import LaundryForm
 from students.serializers import LaundryFormListSerializer
 
 
-class IsSecurity(IsAuthenticated):
-    """Permission class for security personnel."""
-    
-    def has_permission(self, request, view):
-        return super().has_permission(request, view) and request.user.role == 'security'
+from dhms_api.permissions import IsSecurity
 
 
 # ==================== SECURITY VIEWS ====================
