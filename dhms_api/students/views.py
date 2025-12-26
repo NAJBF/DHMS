@@ -12,6 +12,7 @@ from .serializers import (
     MaintenanceRequestCreateSerializer, MaintenanceRequestListSerializer,
     LaundryFormCreateSerializer, LaundryFormListSerializer,
     PenaltySerializer, PenaltyCreateSerializer, RoomAssignmentCreateSerializer,
+    MaintenanceRejectionSerializer, LaundryRejectionSerializer,
 )
 from accounts.models import Student
 from staff.models import Room
@@ -154,7 +155,12 @@ class StudentMaintenanceView(APIView):
             'data': {'requests': serializer.data}
         })
     
-    @extend_schema(tags=['students'], summary='Create Maintenance Request')
+    @extend_schema(
+        tags=['students'],
+        summary='Create Maintenance Request',
+        request=MaintenanceRequestCreateSerializer,
+        responses={201: MaintenanceRequestListSerializer}
+    )
     def post(self, request):
         serializer = MaintenanceRequestCreateSerializer(
             data=request.data, context={'request': request}
@@ -196,7 +202,12 @@ class StudentLaundryView(APIView):
             'data': {'forms': serializer.data}
         })
     
-    @extend_schema(tags=['students'], summary='Create Laundry Form')
+    @extend_schema(
+        tags=['students'], 
+        summary='Create Laundry Form',
+        request=LaundryFormCreateSerializer,
+        responses={201: LaundryFormListSerializer}
+    )
     def post(self, request):
         serializer = LaundryFormCreateSerializer(
             data=request.data, context={'request': request}
@@ -204,6 +215,12 @@ class StudentLaundryView(APIView):
         
         if serializer.is_valid():
             form = serializer.save()
+            
+            # Generate QR Code URL
+            # Format: {BASE_URL}/aau-dhms-api/public/laundry/{form_code}/taken/
+            base_url = request.build_absolute_uri('/')[:-1] # Remove trailing slash
+            qr_url = f"{base_url}/aau-dhms-api/public/laundry/{form.form_code}/taken/"
+            
             return Response({
                 'success': True,
                 'message': 'Laundry form submitted',
@@ -211,6 +228,7 @@ class StudentLaundryView(APIView):
                     'id': form.id,
                     'form_code': form.form_code,
                     'status': form.status,
+                    'qr_link': qr_url
                 }
             }, status=status.HTTP_201_CREATED)
         
@@ -297,7 +315,12 @@ class ProctorAssignRoomView(APIView):
     
     permission_classes = [IsProctor]
     
-    @extend_schema(tags=['proctors'], summary='Assign Room to Student')
+    @extend_schema(
+        tags=['proctors'], 
+        summary='Assign Room to Student',
+        request=RoomAssignmentCreateSerializer,
+        responses={201: RoomAssignmentSerializer}
+    )
     def post(self, request):
         serializer = RoomAssignmentCreateSerializer(
             data=request.data, context={'request': request}
@@ -364,7 +387,11 @@ class ProctorMaintenanceRejectView(APIView):
     
     permission_classes = [IsProctor]
     
-    @extend_schema(tags=['proctors'], summary='Reject Maintenance Request')
+    @extend_schema(
+        tags=['proctors'], 
+        summary='Reject Maintenance Request',
+        request=MaintenanceRejectionSerializer
+    )
     def put(self, request, pk):
         try:
             maintenance = MaintenanceRequest.objects.get(pk=pk)
@@ -429,7 +456,11 @@ class ProctorLaundryRejectView(APIView):
     
     permission_classes = [IsProctor]
     
-    @extend_schema(tags=['proctors'], summary='Reject Laundry Form')
+    @extend_schema(
+        tags=['proctors'], 
+        summary='Reject Laundry Form',
+        request=LaundryRejectionSerializer
+    )
     def put(self, request, pk):
         try:
             form = LaundryForm.objects.get(pk=pk)
@@ -452,7 +483,12 @@ class ProctorCreatePenaltyView(APIView):
     
     permission_classes = [IsProctor]
     
-    @extend_schema(tags=['proctors'], summary='Create Penalty')
+    @extend_schema(
+        tags=['proctors'], 
+        summary='Create Penalty',
+        request=PenaltyCreateSerializer,
+        responses={201: PenaltySerializer}
+    )
     def post(self, request):
         serializer = PenaltyCreateSerializer(
             data=request.data, context={'request': request}
