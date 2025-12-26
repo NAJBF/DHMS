@@ -194,9 +194,12 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'AAU DHMS API',
     'DESCRIPTION': 'Addis Ababa University - Dorm and Hostel Management System API',
     'VERSION': '1.0.0',
+
     'SERVE_INCLUDE_SCHEMA': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+
     'COMPONENT_SPLIT_REQUEST': True,
-    'SCHEMA_PATH_PREFIX': '/aau-dhms-api/',
-    'SCHEMA_PATH_PREFIX_TRIM': True,
+
+    'SCHEMA_PATH_PREFIX': '/aau-dhms-api',
+    'SCHEMA_PATH_PREFIX_TRIM': False,
 }
