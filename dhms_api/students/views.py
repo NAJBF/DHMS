@@ -17,18 +17,7 @@ from accounts.models import Student
 from staff.models import Room
 
 
-class IsStudent(IsAuthenticated):
-    """Permission class for students."""
-    
-    def has_permission(self, request, view):
-        return super().has_permission(request, view) and request.user.role == 'student'
-
-
-class IsProctor(IsAuthenticated):
-    """Permission class for proctors."""
-    
-    def has_permission(self, request, view):
-        return super().has_permission(request, view) and request.user.role == 'proctor'
+from dhms_api.permissions import IsStudent, IsProctor
 
 
 # ==================== STUDENT VIEWS ====================
