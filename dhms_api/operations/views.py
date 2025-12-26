@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from students.models import LaundryForm
 from students.serializers import LaundryFormListSerializer
+from .serializers import LaundryVerificationSerializer, LaundryQRScanSerializer
 
 
 from dhms_api.permissions import IsSecurity
@@ -77,7 +78,11 @@ class SecurityVerifyLaundryView(APIView):
     
     permission_classes = [IsSecurity]
     
-    @extend_schema(tags=['security'], summary='Verify Laundry Form')
+    @extend_schema(
+        tags=['security'], 
+        summary='Verify Laundry Form',
+        request=LaundryVerificationSerializer
+    )
     def put(self, request, pk):
         try:
             form = LaundryForm.objects.get(pk=pk, status='approved_by_proctor')
@@ -129,7 +134,11 @@ class SecurityLaundryQRScanView(APIView):
     
     permission_classes = [IsSecurity]
     
-    @extend_schema(tags=['security'], summary='Scan Laundry QR Code')
+    @extend_schema(
+        tags=['security'], 
+        summary='Scan Laundry QR Code',
+        request=LaundryQRScanSerializer
+    )
     def post(self, request):
         qr_code = request.data.get('qr_code')
         
