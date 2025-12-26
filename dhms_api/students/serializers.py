@@ -212,3 +212,13 @@ class RoomAssignmentCreateSerializer(serializers.ModelSerializer):
         room.save()
         
         return super().create(validated_data)
+
+
+class MaintenanceRejectionSerializer(serializers.Serializer):
+    """Serializer for rejecting maintenance requests."""
+    rejection_reason = serializers.CharField(required=True)
+
+
+class LaundryRejectionSerializer(serializers.Serializer):
+    """Serializer for rejecting laundry forms."""
+    rejection_reason = serializers.CharField(required=True)
