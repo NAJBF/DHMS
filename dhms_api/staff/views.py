@@ -11,11 +11,7 @@ from students.models import MaintenanceRequest
 from students.serializers import MaintenanceRequestListSerializer
 
 
-class IsStaffMember(IsAuthenticated):
-    """Permission class for staff members."""
-    
-    def has_permission(self, request, view):
-        return super().has_permission(request, view) and request.user.role == 'staff'
+from dhms_api.permissions import IsStaffMember
 
 
 # ==================== STAFF VIEWS ====================
