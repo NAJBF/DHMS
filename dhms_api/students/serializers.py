@@ -99,6 +99,17 @@ class LaundryFormCreateSerializer(serializers.ModelSerializer):
         model = LaundryForm
         fields = ['item_count', 'item_list', 'special_instructions']
     
+    def validate(self, data):
+        """Validate item count matches item list."""
+        if 'item_count' in data and 'item_list' in data:
+            # Assuming item_list is comma-separated
+            items = [i.strip() for i in data['item_list'].split(',') if i.strip()]
+            if len(items) != data['item_count']:
+                raise serializers.ValidationError({
+                    "item_count": f"Item count ({data['item_count']}) does not match the number of items listed ({len(items)}). Please check your list."
+                })
+        return data
+
     def create(self, validated_data):
         # Generate form code
         validated_data['form_code'] = f"LAU-{timezone.now().year}-{uuid.uuid4().hex[:6].upper()}"
