@@ -192,6 +192,23 @@ class PublicLaundryTakenOutView(APIView):
     )
     def get(self, request, form_code):
         """Handle GET request from QR code scan."""
+        # 1. Security Check
+        if not request.user.is_authenticated:
+            return Response({
+                'success': False,
+                'error': 'Authentication required',
+                'message': 'You must be logged in as a security guard to process this scan.'
+            }, status=401)
+
+        if not hasattr(request.user, 'security_profile'):
+             return Response({
+                'success': False,
+                'error': 'Permission denied',
+                'message': 'Only security guards can process laundry QR codes.'
+            }, status=403)
+            
+        security = request.user.security_profile
+
         try:
             form = LaundryForm.objects.select_related('student', 'student__user').get(form_code=form_code)
         except LaundryForm.DoesNotExist:
@@ -214,8 +231,17 @@ class PublicLaundryTakenOutView(APIView):
                 }
             }, status=400)
         
+        # Auto-Verify Logic
+        # If it's approved_by_proctor, we allow security to verify AND take out in one go
+        if form.status == 'approved_by_proctor':
+            form.status = 'verified_by_security'
+            form.verified_by = security
+            form.verification_date = timezone.now()
+            form.save()
+            # Fall through to taken_out logic below
+            
         if form.status != 'verified_by_security':
-            return Response({
+             return Response({
                 'success': False,
                 'error': 'Not verified',
                 'message': f'This laundry has not been verified by security yet. Current status: {form.get_status_display()}',
@@ -231,7 +257,7 @@ class PublicLaundryTakenOutView(APIView):
         
         return Response({
             'success': True,
-            'message': 'Laundry successfully marked as taken out!',
+            'message': 'Laundry status updated: Verified and Taken Out.',
             'data': {
                 'form_code': form.form_code,
                 'student_name': form.student.user.full_name,
