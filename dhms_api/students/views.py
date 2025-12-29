@@ -509,35 +509,66 @@ class ProctorCreatePenaltyView(APIView):
 
 
 class ProctorStudentsView(APIView):
-    """Get students in proctor's dorm."""
+    """Get students in proctor's dorm with penalties."""
     
     permission_classes = [IsProctor]
     
-    @extend_schema(tags=['proctors'], summary='List Students in Dorm')
+    @extend_schema(tags=['proctors'], summary='List Students in Dorm with Penalties')
     def get(self, request):
         try:
             proctor = request.user.proctor_profile
         except:
-            return Response({'success': False, 'error': 'Proctor profile not found'}, status=404)
+            return Response(
+                {'success': False, 'error': 'Proctor profile not found'},
+                status=404
+            )
         
         dorm = proctor.assigned_dorm
         
-        if dorm:
-            assignments = RoomAssignment.objects.filter(
-                room__dorm=dorm, status='active'
-            ).select_related('student', 'student__user')
+        if not dorm:
+            return Response({
+                'success': True,
+                'data': {'students': []}
+            })
+        
+        # Active room assignments in proctor's dorm
+        assignments = (
+            RoomAssignment.objects
+            .filter(room__dorm=dorm, status='active')
+            .select_related('student', 'student__user', 'room')
+        )
+        
+        students = []
+        
+        for assignment in assignments:
+            student = assignment.student
             
-            students = [{
-                'id': a.student.id,
-                'full_name': a.student.user.full_name,
-                'student_code': a.student.student_code,
-                'room_number': a.room.room_number,
+            # Penalties for this student
+            penalties_qs = Penalty.objects.filter(student=student)
+            
+            penalties_data = PenaltySerializer(penalties_qs, many=True).data
+            
+            students.append({
+                'id': student.id,
+                'full_name': student.user.full_name,
+                'student_code': student.student_code,
+                'room_number': assignment.room.room_number,
                 'status': 'active',
-            } for a in assignments]
-        else:
-            students = []
+                
+                # Penalty stats
+                'penalties_count': penalties_qs.count(),
+                'active_penalties_count': penalties_qs.filter(status='active').count(),
+                
+                # Penalty details
+                'penalties': penalties_data,
+            })
         
         return Response({
             'success': True,
-            'data': {'students': students}
+            'data': {
+                'dorm': dorm.name,
+                'students': students
+            }
         })
+
+
